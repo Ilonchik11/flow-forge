@@ -124,6 +124,26 @@ model WorkspaceMember {
   @@map("workspace_members")
 }
 
+// model WorkspaceInvitation {
+//   id String @id @default(uuid())
+
+//   workspaceId String
+//   invitedById String
+//   email       String
+
+//   token     String   @unique
+//   expiresAt DateTime
+//   acceptedAt DateTime?
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   workspace Workspace @relation(...)
+//   invitedBy User @relation(...)
+
+//   @@map("workspace_invitations")
+// }
+
 model Project {
   id String @id @default(uuid())
 
@@ -276,6 +296,7 @@ enum UserStatus {
 }
 
 enum WorkspaceRole {
+  OWNER
   ADMIN
   MEMBER
   GUEST

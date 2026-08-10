@@ -7,6 +7,7 @@ import { OrganizationModule } from './organization/organization.module';
 import { ProjectModule } from './project/project.module';
 import { UserModule } from './user/user.module';
 import { WorkspaceModule } from './workspace/workspace.module';
+import { WorkspaceMemberModule } from './workspace-member/workspace-member.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { WorkspaceModule } from './workspace/workspace.module';
     IssueModule, 
     CommentModule, 
     NotificationModule, 
-    AuthModule,
+    AuthModule, 
+    WorkspaceMemberModule,
   ],
 })
 export class ApiModule {}

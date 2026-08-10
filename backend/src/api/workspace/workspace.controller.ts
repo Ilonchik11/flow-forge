@@ -1,34 +1,137 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { WorkspaceService } from './workspace.service';
-import { CreateWorkspaceDto } from './dto/create-workspace.dto';
-import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiConflictResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 
-@Controller('workspace')
+import { CurrentUser } from 'src/common/decorators';
+import { JwtGuard } from 'src/common/guards';
+import { AuthenticatedUser } from 'src/common/interfaces';
+import { CreateWorkspaceDto, UpdateWorkspaceDto } from './dto';
+import { WorkspaceService } from './workspace.service';
+
+@ApiTags('Workspaces')
+@ApiBearerAuth()
+@UseGuards(JwtGuard)
+@Controller('workspaces')
 export class WorkspaceController {
+
   constructor(private readonly workspaceService: WorkspaceService) {}
 
+  @ApiOperation({
+    summary: 'Create workspace',
+    description: 'Creates a new workspace inside an organization',
+  })
+  @ApiOkResponse({
+    description: 'Workspace successfully created',
+  })
+  @ApiBadRequestResponse({
+    description: 'Incorrect input data',
+  })
+  @ApiConflictResponse({
+    description:
+      'Workspace with this slug already exists in the organization',
+  })
+  @ApiNotFoundResponse({
+    description: 'Organization not found',
+  })
   @Post()
-  create(@Body() createWorkspaceDto: CreateWorkspaceDto) {
-    return this.workspaceService.create(createWorkspaceDto);
+  @HttpCode(HttpStatus.CREATED)
+  async create(
+    @Body() dto: CreateWorkspaceDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.workspaceService.create(dto, user);
   }
 
+  @ApiOperation({
+    summary: 'Get all workspaces',
+    description:
+      'Returns workspaces owned by the authenticated user',
+  })
+  @ApiOkResponse({
+    description: 'List of workspaces',
+  })
   @Get()
-  findAll() {
-    return this.workspaceService.findAll();
+  async findAll(
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.workspaceService.findAll(user);
   }
 
+  @ApiOperation({
+    summary: 'Get workspace by ID',
+    description:
+      'Returns a workspace accessible to the authenticated user',
+  })
+  @ApiOkResponse({
+    description: 'Workspace found',
+  })
+  @ApiNotFoundResponse({
+    description: 'Workspace not found',
+  })
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.workspaceService.findOne(+id);
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.workspaceService.findOne(id, user);
   }
 
+  @ApiOperation({
+    summary: 'Update workspace',
+    description:
+      'Updates workspace information',
+  })
+  @ApiOkResponse({
+    description: 'Workspace successfully updated',
+  })
+  @ApiNotFoundResponse({
+    description: 'Workspace not found',
+  })
+  @ApiConflictResponse({
+    description:
+      'Workspace with this slug already exists in the organization',
+  })
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateWorkspaceDto: UpdateWorkspaceDto) {
-    return this.workspaceService.update(+id, updateWorkspaceDto);
+  async update(
+    @Param('id') id: string, 
+    @Body() dto: UpdateWorkspaceDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.workspaceService.update(id, dto, user);
   }
 
+  @ApiOperation({
+    summary: 'Delete workspace',
+    description: 'Deletes a workspace and its related data',
+  })
+  @ApiNotFoundResponse({
+    description: 'Workspace not found',
+  })
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.workspaceService.remove(+id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.workspaceService.remove(id, user);
   }
 }

@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable } from "@nestjs/common";
-import { UserRole, WorkspaceRole } from "@prisma/client";
+import { ProjectRole, UserRole, WorkspaceRole } from "@prisma/client";
 import { AuthenticatedUser } from "../interfaces";
 
 @Injectable()
@@ -173,6 +173,144 @@ export class AuthorizationService {
         'Workspace owner cannot leave the workspace. Transfer ownership first',
       );
     }
+  }
+
+  canCreateProject(
+    user: AuthenticatedUser,
+    workspace: { ownerId: string },
+    membership: { role: WorkspaceRole } | null,
+  ): void {
+    if (this.isAdmin(user)) {
+      return;
+    }
+
+    if (this.isOwner(user, workspace.ownerId)) {
+      return;
+    }
+
+    this.requirePermission(
+      membership !== null &&
+        this.isWorkspaceAdmin(membership.role),
+      'You do not have permission to create projects in this workspace',
+    );
+  }
+
+  canViewProject(
+    user: AuthenticatedUser,
+    project: { ownerId: string },
+    membership: { role: WorkspaceRole } | null,
+  ): void {
+    if (this.isAdmin(user)) {
+      return;
+    }
+
+    if (this.isOwner(user, project.ownerId)) {
+      return;
+    }
+
+    this.requirePermission(
+      membership !== null,
+      'You do not have permission to view this project',
+    );
+  }
+
+  canUpdateProject(
+    user: AuthenticatedUser,
+    project: { ownerId: string },
+    membership: { role: WorkspaceRole } | null,
+  ): void {
+    if (this.isAdmin(user)) {
+      return;
+    }
+
+    if (this.isOwner(user, project.ownerId)) {
+      return;
+    }
+
+    this.requirePermission(
+      membership !== null &&
+        this.isWorkspaceAdmin(membership.role),
+      'You do not have permission to modify this project',
+    );
+  }
+
+  canDeleteProject(
+    user: AuthenticatedUser,
+    project: { ownerId: string },
+    membership: { role: WorkspaceRole } | null,
+  ): void {
+    if (this.isAdmin(user)) {
+      return;
+    }
+
+    if (this.isOwner(user, project.ownerId)) {
+      return;
+    }
+
+    this.requirePermission(
+      membership !== null &&
+        membership.role === WorkspaceRole.OWNER,
+      'Only the workspace owner can delete this project',
+    );
+  }
+
+  canViewProjectMembers(
+    user: AuthenticatedUser,
+    project: {
+      ownerId: string;
+      members: {
+        userId: string;
+      }[];
+    },
+  ): void {
+    const isProjectMember = project.members.some(
+      member => member.userId === user.id,
+    );
+
+    this.requirePermission(
+      this.isAdmin(user) ||
+        project.ownerId === user.id ||
+        isProjectMember,
+      'You do not have permission to view project members',
+    );
+  }
+
+  canManageProjectMembers(
+    user: AuthenticatedUser,
+    project: {
+      ownerId: string;
+      members: {
+        userId: string;
+        role: ProjectRole;
+      }[];
+    },
+  ): void {
+    const membership = project.members.find(
+      member => member.userId === user.id,
+    );
+
+    const isProjectAdmin =
+      membership?.role === ProjectRole.ADMIN;
+
+    this.requirePermission(
+      this.isAdmin(user) ||
+        project.ownerId === user.id ||
+        isProjectAdmin,
+      'You do not have permission to manage project members',
+    );
+  }
+
+  canLeaveProject(
+    user: AuthenticatedUser,
+    project: {
+      ownerId: string;
+    },
+  ): void {
+    this.requirePermission(
+      this.isAdmin(user) ||
+        project.ownerId !== user.id,
+      'Project owner cannot leave the project',
+    );
   }
 
   private isAdmin(user: AuthenticatedUser): boolean {

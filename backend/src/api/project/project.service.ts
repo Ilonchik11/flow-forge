@@ -1,26 +1,243 @@
-import { Injectable } from '@nestjs/common';
-import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ProjectRole, UserRole } from '@prisma/client';
+import { AuthenticatedUser } from 'src/common/interfaces';
+import { AuthorizationService } from 'src/common/services';
+import { PrismaService } from 'src/infra/prisma/prisma.service';
+import { CreateProjectDto, UpdateProjectDto } from './dto';
 
 @Injectable()
 export class ProjectService {
-  create(createProjectDto: CreateProjectDto) {
-    return 'This action adds a new project';
+
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly authorizationService: AuthorizationService,
+  ) {}
+
+  async create(
+    dto: CreateProjectDto,
+    currentUser: AuthenticatedUser,
+  ) {
+    const workspace = await this.prismaService.workspace.findUnique({
+      where:  {
+        id: dto.workspaceId,
+      },
+    });
+
+    if(!workspace) {
+      throw new NotFoundException('Workspace not found');
+    }
+
+    const membership = await this.getWorkspaceMembership(
+      workspace.id,
+      currentUser.id,
+    );
+
+    this.authorizationService.canCreateProject(
+      currentUser,
+      workspace,
+      membership,
+    );
+
+    const existingProject = await this.prismaService.project.findUnique({
+      where: {
+        workspaceId_key: {
+          workspaceId: dto.workspaceId,
+          key: dto.key,
+        },
+      },
+    });
+
+    if(existingProject) {
+      throw new ConflictException('Project with this key already exists in this workspace');
+    }
+
+    return this.prismaService.project.create({
+      data: {
+        workspaceId: dto.workspaceId,
+        ownerId: currentUser.id,
+        name: dto.name,
+        key: dto.key,
+        description: dto.description,
+        avatarUrl: dto.avatarUrl,
+
+        members: {
+          create: {
+            userId: currentUser.id,
+            role: ProjectRole.ADMIN,
+          },
+        },
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all project`;
+  async findAll(
+    currentUser: AuthenticatedUser,
+  ) {
+    if(currentUser.role === UserRole.ADMIN) {
+      return this.prismaService.project.findMany({
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    }
+
+    return this.prismaService.project.findMany({
+      where: {
+        workspace: {
+          members: {
+            some: {
+              userId: currentUser.id,
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} project`;
+  async findOne(
+    id: string,
+    currentUser: AuthenticatedUser,
+  ) {
+    const project = await this.prismaService.project.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if(!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const membership = await this.getWorkspaceMembership(
+      project.workspaceId,
+      currentUser.id,
+    );
+
+    this.authorizationService.canViewProject(
+      currentUser,
+      project,
+      membership,
+    );
+
+    return project;
   }
 
-  update(id: number, updateProjectDto: UpdateProjectDto) {
-    return `This action updates a #${id} project`;
+  async update(
+    id: string, 
+    dto: UpdateProjectDto,
+    currentUser: AuthenticatedUser,
+  ) {
+    const project = await this.prismaService.project.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if(!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const membership = await this.getWorkspaceMembership(
+      project.workspaceId,
+      currentUser.id,
+    );
+
+    this.authorizationService.canUpdateProject(
+      currentUser,
+      project,
+      membership,
+    );
+
+    if(
+      dto.key !== undefined &&
+      dto.key !== project.key
+    ) {
+      const existing = await this.prismaService.project.findUnique({
+        where: {
+          workspaceId_key: {
+            workspaceId: project.workspaceId,
+            key: dto.key,
+          },
+        },
+      });
+
+      if(existing) {
+        throw new ConflictException('Project with this key already exists in this workspace');
+      }
+    }
+
+    return this.prismaService.project.update({
+      where: {
+        id,
+      },
+      data: {
+        ...(dto.name !== undefined && {
+          name: dto.name,
+        }),
+
+        ...(dto.key !== undefined && {
+          key: dto.key,
+        }),
+
+        ...(dto.description !== undefined && {
+          description: dto.description,
+        }),
+
+        ...(dto.avatarUrl !== undefined && {
+          avatarUrl: dto.avatarUrl,
+        }),
+      },
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} project`;
+  async remove(
+    id: string,
+    currentUser: AuthenticatedUser,
+  ) {
+    const project = await this.prismaService.project.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if(!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const membership = await this.getWorkspaceMembership(
+      project.workspaceId,
+      currentUser.id,
+    );
+
+    this.authorizationService.canDeleteProject(
+      currentUser,
+      project,
+      membership,
+    );
+
+    await this.prismaService.project.delete({
+      where: {
+        id: project.id,
+      },
+    });
+
+    return true;
+  }
+
+  private async getWorkspaceMembership(
+    workspaceId: string,
+    userId: string,
+  ) {
+    return this.prismaService.workspaceMember.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId,
+          workspaceId,
+        },
+      },
+    });
   }
 }

@@ -313,6 +313,104 @@ export class AuthorizationService {
     );
   }
 
+  canViewIssue(
+    user: AuthenticatedUser,
+    project: {
+      ownerId: string;
+      members: {
+        userId: string;
+        role: ProjectRole;
+      }[];
+    },
+  ): void {
+    const isProjectMember = project.members.some(
+      member => member.userId === user.id,
+    );
+
+    this.requirePermission(
+      this.isAdmin(user) ||
+        project.ownerId === user.id ||
+        isProjectMember,
+      'You do not have permission to view issues in this project',
+    );
+  }
+
+  canCreateIssue(
+    user: AuthenticatedUser,
+    project: {
+      ownerId: string;
+      members: {
+        userId: string;
+        role: ProjectRole;
+      }[];
+    },
+  ): void {
+    const membership = project.members.find(
+      member => member.userId === user.id,
+    );
+
+    this.requirePermission(
+      this.isAdmin(user) ||
+        project.ownerId === user.id ||
+        membership !== undefined,
+      'You do not have permission to create issues in this project',
+    );
+  }
+
+  canUpdateIssue(
+    user: AuthenticatedUser,
+    project: {
+      ownerId: string;
+      members: {
+        userId: string;
+        role: ProjectRole;
+      }[];
+    },
+    issue: {
+      reporterId: string;
+      assigneeId: string | null;
+    },
+  ): void {
+    const membership = project.members.find(
+      member => member.userId === user.id,
+    );
+
+    this.requirePermission(
+      this.isAdmin(user) ||
+        project.ownerId === user.id ||
+        membership?.role === ProjectRole.ADMIN ||
+        issue.reporterId === user.id ||
+        issue.assigneeId === user.id,
+      'You do not have permission to update this issue',
+    );
+  }
+
+  canDeleteIssue(
+    user: AuthenticatedUser,
+    project: {
+      ownerId: string;
+      members: {
+        userId: string;
+        role: ProjectRole;
+      }[];
+    },
+    issue: {
+      reporterId: string;
+    },
+  ): void {
+    const membership = project.members.find(
+      member => member.userId === user.id,
+    );
+
+    this.requirePermission(
+      this.isAdmin(user) ||
+        project.ownerId === user.id ||
+        membership?.role === ProjectRole.ADMIN ||
+        issue.reporterId === user.id,
+      'You do not have permission to delete this issue',
+    );
+  }
+
   private isAdmin(user: AuthenticatedUser): boolean {
     return user.role === UserRole.ADMIN;
   }

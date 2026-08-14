@@ -223,8 +223,6 @@ export class ProjectService {
         id: project.id,
       },
     });
-
-    return true;
   }
 
   private async getWorkspaceMembership(

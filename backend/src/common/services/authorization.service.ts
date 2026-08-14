@@ -411,6 +411,89 @@ export class AuthorizationService {
     );
   }
 
+  canViewComment(
+    user: AuthenticatedUser,
+    project: {
+      ownerId: string;
+      members: {
+        userId: string;
+      }[];
+    },
+  ): void {
+    const isProjectMember = project.members.some(
+      (member) => member.userId === user.id,
+    );
+
+    this.requirePermission(
+      this.isAdmin(user) ||
+        this.isOwner(user, project.ownerId) ||
+        isProjectMember,
+      'You do not have permission to view this comment',
+    );
+  }
+
+  canCreateComment(
+    user: AuthenticatedUser,
+    project: {
+      ownerId: string;
+      members: {
+        userId: string;
+      }[];
+    },
+  ): void {
+    const isProjectMember = project.members.some(
+      (member) => member.userId === user.id,
+    );
+
+    this.requirePermission(
+      this.isAdmin(user) ||
+        this.isOwner(user, project.ownerId) ||
+        isProjectMember,
+      'You do not have permission to create a comment',
+    );
+  }
+
+  canUpdateComment(
+    user: AuthenticatedUser,
+    comment: {
+      authorId: string;
+    },
+  ): void {
+    this.requirePermission(
+      comment.authorId === user.id,
+      'Only the comment author can update this comment',
+    );
+  }
+
+  canDeleteComment(
+    user: AuthenticatedUser,
+    project: {
+      ownerId: string;
+      members: {
+        userId: string;
+        role: ProjectRole;
+      }[];
+    },
+    comment: {
+      authorId: string;
+    },
+  ): void {
+    const membership = project.members.find(
+      (member) => member.userId === user.id,
+    );
+
+    const canManage =
+      membership?.role === ProjectRole.ADMIN;
+
+    this.requirePermission(
+      this.isAdmin(user) ||
+        this.isOwner(user, project.ownerId) ||
+        comment.authorId === user.id ||
+        canManage,
+      'You do not have permission to delete this comment',
+    );
+  }
+
   private isAdmin(user: AuthenticatedUser): boolean {
     return user.role === UserRole.ADMIN;
   }

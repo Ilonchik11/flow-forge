@@ -1,34 +1,181 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  UseGuards
+} from '@nestjs/common';
+
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+
+import { CurrentUser } from 'src/common/decorators';
+import { JwtGuard } from 'src/common/guards';
+import { AuthenticatedUser } from 'src/common/interfaces';
+
+import {
+  CommentResponseDto,
+  CreateCommentDto,
+  UpdateCommentDto,
+} from './dto';
+
 import { CommentService } from './comment.service';
-import { CreateCommentDto } from './dto/create-comment.dto';
-import { UpdateCommentDto } from './dto/update-comment.dto';
 
-@Controller('comment')
+@ApiTags('Comments')
+@ApiBearerAuth()
+@UseGuards(JwtGuard)
+@Controller('comments')
 export class CommentController {
-  constructor(private readonly commentService: CommentService) {}
 
+  constructor(
+    private readonly commentService: CommentService,
+  ) {}
+
+  @ApiOperation ({
+    summary: 'Create comment',
+    description: 'Creates a new comment for an issue',
+  })
+  @ApiCreatedResponse({
+    type: CommentResponseDto,
+    description: 'Comment successfully created',
+  })
+  @ApiBadRequestResponse({
+    description: 'Incorrect input data',
+  })
+  @ApiNotFoundResponse({
+    description: 'Issue not found',
+  })
+  @ApiForbiddenResponse({
+    description: 'User does not have permission to create a comment',
+  })
   @Post()
-  create(@Body() createCommentDto: CreateCommentDto) {
-    return this.commentService.create(createCommentDto);
+  @HttpCode(HttpStatus.CREATED)
+  async create(
+    @Body() dto: CreateCommentDto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return await this.commentService.create(
+      dto,
+      currentUser,
+    );
   }
 
-  @Get()
-  findAll() {
-    return this.commentService.findAll();
+  @ApiOperation({
+    summary: 'Get issue comments',
+    description: 'Returns all comments belonging to an issue',
+  })
+  @ApiOkResponse({
+    type: CommentResponseDto,
+    isArray: true,
+    description: 'Comments to an issue successfully found'
+  })
+  @ApiBadRequestResponse({
+    description: 'Incorrect input data: issue ID is required or invalid',
+  })
+  @ApiNotFoundResponse({
+    description: 'Issue not found',
+  })
+  @ApiForbiddenResponse({
+    description: 'User does not have permission to view comments for this issue',
+  })
+  @Get('issue/:issueId')
+  async findAll(
+    @Param('issueId') issueId: string,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return await this.commentService.findAll(
+      issueId,
+      currentUser,
+    );
   }
 
+  @ApiOperation({
+    summary: 'Get comment by ID',
+    description: 'Returns a specific comment',
+  })
+  @ApiOkResponse({
+    type: CommentResponseDto,
+    description: 'Comment successfully found',
+  })
+  @ApiNotFoundResponse({
+    description: 'Comment not found',
+  })
+  @ApiForbiddenResponse({
+    description: 'User does not have permission to view this comment',
+  })
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.commentService.findOne(+id);
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return await this.commentService.findOne(
+      id,
+      currentUser,
+    );
   }
 
+  @ApiOperation({
+    summary: 'Update comment',
+    description: 'Updates the content of an existing comment',
+  })
+  @ApiOkResponse({
+    type: CommentResponseDto,
+    description: 'Comment successfully updated',
+  })
+  @ApiBadRequestResponse({
+    description: 'Incorrect input data',
+  })
+  @ApiNotFoundResponse({
+    description: 'Comment not found',
+  })
+  @ApiForbiddenResponse({
+    description: 'Only the comment author can update the comment',
+  })
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCommentDto: UpdateCommentDto) {
-    return this.commentService.update(+id, updateCommentDto);
+  async update(
+    @Param('id') id: string, 
+    @Body() dto: UpdateCommentDto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return await this.commentService.update(
+      id, 
+      dto,
+      currentUser,
+    );
   }
 
+  @ApiOperation({
+    summary: 'Delete comment',
+    description: 'Deletes an existing comment',
+  })
+  @ApiNotFoundResponse({
+    description: 'Comment not found',
+  })
+  @ApiForbiddenResponse({
+    description: 'Only the comment author, project administrators, project owners, or system administrators can delete the comment'
+  })
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.commentService.remove(+id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return await this.commentService.remove(
+      id,
+      currentUser,
+    );
   }
 }

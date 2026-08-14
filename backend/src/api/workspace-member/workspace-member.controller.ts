@@ -14,6 +14,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConflictResponse,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -96,8 +97,9 @@ export class WorkspaceMemberController {
     summary: 'Add workspace member',
     description: 'Adds a user to the workspace with the MEMBER role',
   })
-  @ApiOkResponse({
+  @ApiCreatedResponse({
     type: WorkspaceMemberResponseDto,
+    description: 'Workspace member successfully added',
   })
   @ApiBadRequestResponse({
     description: 'Incorrect input data',

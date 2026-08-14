@@ -15,6 +15,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConflictResponse,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -119,8 +120,9 @@ export class ProjectMemberController {
     summary: 'Add project member',
     description: 'Adds a user to the project with the MEMBER role',
   })
-  @ApiOkResponse({
+  @ApiCreatedResponse({
     type: ProjectMemberResponseDto,
+    description: 'Project member successfully added',
   })
   @ApiBadRequestResponse({
     description: 'Incorrect input data',

@@ -14,17 +14,17 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConflictResponse,
-  ApiForbiddenResponse,
+  ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiTags,
+  ApiTags
 } from '@nestjs/swagger';
 
 import { CurrentUser } from 'src/common/decorators';
 import { JwtGuard } from 'src/common/guards';
 import { AuthenticatedUser } from 'src/common/interfaces';
-import { CreateWorkspaceDto, UpdateWorkspaceDto } from './dto';
+import { CreateWorkspaceDto, UpdateWorkspaceDto, WorkspaceResponseDto } from './dto';
 import { WorkspaceService } from './workspace.service';
 
 @ApiTags('Workspaces')
@@ -39,15 +39,15 @@ export class WorkspaceController {
     summary: 'Create workspace',
     description: 'Creates a new workspace inside an organization',
   })
-  @ApiOkResponse({
+  @ApiCreatedResponse({
+    type: WorkspaceResponseDto,
     description: 'Workspace successfully created',
   })
   @ApiBadRequestResponse({
     description: 'Incorrect input data',
   })
   @ApiConflictResponse({
-    description:
-      'Workspace with this slug already exists in the organization',
+    description: 'Workspace with this slug already exists in the organization',
   })
   @ApiNotFoundResponse({
     description: 'Organization not found',

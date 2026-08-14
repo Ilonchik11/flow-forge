@@ -14,6 +14,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConflictResponse,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -27,8 +28,8 @@ import { AuthenticatedUser } from 'src/common/interfaces';
 
 import {
   CreateProjectDto,
-  UpdateProjectDto,
   ProjectResponseDto,
+  UpdateProjectDto,
 } from './dto';
 
 import { ProjectService } from './project.service';
@@ -45,7 +46,7 @@ export class ProjectController {
     summary: 'Create project',
     description: 'Creates a new project inside a workspace',
   })
-  @ApiOkResponse({
+  @ApiCreatedResponse({
     type: ProjectResponseDto,
     description: 'Project successfully created',
   })

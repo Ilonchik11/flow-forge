@@ -44,6 +44,7 @@ export class OrganizationController {
   })
   @ApiCreatedResponse({
     type: OrganizationResponseDto,
+    description: 'Organization successfully created',
   })
   @ApiConflictResponse({
     description: 'Organization with this slug already exists'

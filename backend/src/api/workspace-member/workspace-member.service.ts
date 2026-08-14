@@ -266,8 +266,6 @@ export class WorkspaceMemberService {
                 id: member.id,
             },
         });
-
-        return true;
     }
 
     async leave(
@@ -283,8 +281,6 @@ export class WorkspaceMemberService {
                 id: membership.id,
             },
         });
-
-        return true;
     }
 
     private async getCurrentUserMembership(

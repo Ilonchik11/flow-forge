@@ -157,7 +157,5 @@ export class OrganizationService {
         id: organization.id,
       },
     });
-
-    return true;
   }
 }

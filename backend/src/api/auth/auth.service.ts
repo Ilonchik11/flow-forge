@@ -141,10 +141,8 @@ export class AuthService {
     }
   }
 
-  async logout(res: Response): Promise<boolean> {
+  async logout(res: Response) {
     this.setCookie(res, 'refreshToken', new Date(0));
-
-    return true;
   }
 
   async validate(id: string) {

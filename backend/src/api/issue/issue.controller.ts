@@ -15,6 +15,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConflictResponse,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -46,7 +47,7 @@ export class IssueController {
     summary: 'Create issue',
     description: 'Creates a new issue in a project',
   })
-  @ApiOkResponse({
+  @ApiCreatedResponse({
     type: IssueResponseDto,
     description: 'Issue successfully created',
   })

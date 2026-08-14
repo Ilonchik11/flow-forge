@@ -195,7 +195,5 @@ export class WorkspaceService {
         id: workspace.id,
       },
     });
-
-    return true;
   }
 }

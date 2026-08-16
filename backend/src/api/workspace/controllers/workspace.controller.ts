@@ -25,8 +25,8 @@ import {
 import { CurrentUser } from 'src/common/decorators';
 import { JwtGuard } from 'src/common/guards';
 import { AuthenticatedUser } from 'src/common/interfaces';
-import { CreateWorkspaceDto, UpdateWorkspaceDto, WorkspaceResponseDto } from './dto';
-import { WorkspaceService } from './workspace.service';
+import { CreateWorkspaceDto, UpdateWorkspaceDto, WorkspaceResponseDto } from '../dto';
+import { WorkspaceService } from '../services/workspace.service';
 
 @ApiTags('Workspaces')
 @ApiBearerAuth()

@@ -29,8 +29,8 @@ import {
   CreateOrganizationDto,
   OrganizationResponseDto,
   UpdateOrganizationDto,
-} from './dto';
-import { OrganizationService } from './organization.service';
+} from '../dto';
+import { OrganizationService } from '../services/organization.service';
 
 @ApiTags('Organizations')
 @ApiBearerAuth()

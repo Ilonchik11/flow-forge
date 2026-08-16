@@ -1,10 +1,10 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { NotificationType, ProjectRole, UserRole } from '@prisma/client';
+import { NotificationService } from 'src/api/notification/services/notification.service';
 import { AuthenticatedUser } from 'src/common/interfaces';
 import { AuthorizationService } from 'src/common/services';
 import { PrismaService } from 'src/infra/prisma/prisma.service';
-import { NotificationService } from '../notification/services/notification.service';
-import { CreateProjectDto, UpdateProjectDto } from './dto';
+import { CreateProjectDto, UpdateProjectDto } from '../dto';
 
 @Injectable()
 export class ProjectService {

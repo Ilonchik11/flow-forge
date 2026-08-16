@@ -2,8 +2,8 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { AuthenticatedUser } from 'src/common/interfaces';
 import { AuthorizationService } from 'src/common/services';
 import { PrismaService } from 'src/infra/prisma/prisma.service';
-import { CreateOrganizationDto } from './dto/create-organization.dto';
-import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { CreateOrganizationDto } from '../dto/create-organization.dto';
+import { UpdateOrganizationDto } from '../dto/update-organization.dto';
 import { UserRole } from '@prisma/client';
 
 @Injectable()

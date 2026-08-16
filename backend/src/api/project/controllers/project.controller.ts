@@ -31,9 +31,9 @@ import {
   CreateProjectDto,
   ProjectResponseDto,
   UpdateProjectDto,
-} from './dto';
+} from '../dto';
 
-import { ProjectService } from './project.service';
+import { ProjectService } from '../services/project.service';
 
 @ApiTags('Projects')
 @ApiBearerAuth()

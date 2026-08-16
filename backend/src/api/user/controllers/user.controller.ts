@@ -4,9 +4,9 @@ import { UserRole } from '@prisma/client';
 import { Authorization, CurrentUser, Roles } from 'src/common/decorators';
 import { JwtGuard, RolesGuard } from 'src/common/guards';
 import { AuthenticatedUser } from 'src/common/interfaces';
-import { UserResponseDto } from './dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserService } from './user.service';
+import { UserResponseDto } from '../dto';
+import { UpdateUserDto } from '../dto/update-user.dto';
+import { UserService } from '../services/user.service';
 
 @ApiTags('Users')
 @ApiBearerAuth()

@@ -31,9 +31,9 @@ import {
   CommentResponseDto,
   CreateCommentDto,
   UpdateCommentDto,
-} from './dto';
+} from '../dto';
 
-import { CommentService } from './comment.service';
+import { CommentService } from '../services/comment.service';
 
 @ApiTags('Comments')
 @ApiBearerAuth()

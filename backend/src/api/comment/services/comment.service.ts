@@ -3,8 +3,8 @@ import { NotificationType } from '@prisma/client';
 import { AuthenticatedUser } from 'src/common/interfaces';
 import { AuthorizationService } from 'src/common/services';
 import { PrismaService } from 'src/infra/prisma/prisma.service';
-import { NotificationService } from '../notification/services/notification.service';
-import { CreateCommentDto, UpdateCommentDto } from './dto';
+import { NotificationService } from '../../notification/services/notification.service';
+import { CreateCommentDto, UpdateCommentDto } from '../dto';
 
 @Injectable()
 export class CommentService {

@@ -32,9 +32,9 @@ import {
   CreateIssueDto,
   IssueResponseDto,
   UpdateIssueDto,
-} from './dto';
+} from '../dto';
 
-import { IssueService } from './issue.service';
+import { IssueService } from '../services/issue.service';
 
 @ApiTags('Issues')
 @ApiBearerAuth()

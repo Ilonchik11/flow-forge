@@ -12,8 +12,8 @@ import { PrismaService } from 'src/infra/prisma/prisma.service';
 import {
   CreateIssueDto,
   UpdateIssueDto,
-} from './dto';
-import { NotificationService } from '../notification/services/notification.service';
+} from '../dto';
+import { NotificationService } from '../../notification/services/notification.service';
 
 @Injectable()
 export class IssueService {

@@ -494,6 +494,18 @@ export class AuthorizationService {
     );
   }
 
+  canAccessNotification(
+    user: AuthenticatedUser,
+    notification: {
+      userId: string;
+    },
+  ): void {
+    this.requirePermission(
+      notification.userId === user.id,
+      'You do not have permission to access this notification',
+    );
+  }
+
   private isAdmin(user: AuthenticatedUser): boolean {
     return user.role === UserRole.ADMIN;
   }

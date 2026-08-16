@@ -1,15 +1,17 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { NotificationType, WorkspaceRole } from '@prisma/client';
 import { AuthenticatedUser } from 'src/common/interfaces';
 import { AuthorizationService } from 'src/common/services';
 import { PrismaService } from 'src/infra/prisma/prisma.service';
+import { NotificationService } from '../notification/services/notification.service';
 import { CreateWorkspaceDto, UpdateWorkspaceDto } from './dto';
-import { WorkspaceRole } from '@prisma/client';
 
 @Injectable()
 export class WorkspaceService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly authorizationService: AuthorizationService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async create(
@@ -72,18 +74,6 @@ export class WorkspaceService {
       where: {
         ownerId: currentUser.id,
       },
-      // where: {
-      //   OR: [
-      //     { ownerId: currentUser.id },
-      //     {
-      //       members: {
-      //         some: {
-      //           userId: currentUser.id,
-      //         },
-      //       },
-      //     },
-      //   ],
-      // },
       orderBy: {
         createdAt: 'desc',
       },
@@ -121,6 +111,13 @@ export class WorkspaceService {
       where: {
         id,
       },
+      include: {
+        members: {
+          select: {
+            userId: true,
+          },
+        },
+      },
     });
 
     if(!workspace) {
@@ -151,23 +148,39 @@ export class WorkspaceService {
       }
     }
 
-    return this.prismaService.workspace.update({
-      where: {
-        id: workspace.id,
-      },
-      data: {
-        ...(dto.name !== undefined && {
-          name: dto.name,
-        }),
+    return this.prismaService.$transaction(async (tx) => {
+      const updatedWorkspace = await tx.workspace.update({
+        where: {
+          id: workspace.id,
+        },
+        data: {
+          ...(dto.name !== undefined && {
+            name: dto.name,
+          }),
 
-        ...(dto.slug !== undefined && {
-          slug: dto.slug,
-        }),
+          ...(dto.slug !== undefined && {
+            slug: dto.slug,
+          }),
 
-        ...(dto.description !== undefined && {
-          description: dto.description,
-        }),
-      },
+          ...(dto.description !== undefined && {
+            description: dto.description,
+          }),
+        },
+      });
+
+      const memberIds = workspace.members
+        .map((member) => member.userId)
+        .filter((userId) => userId !== currentUser.id);
+
+      await this.notificationService.notifyUsersTx(
+        tx,
+        memberIds,
+        NotificationType.WORKSPACE_UPDATED,
+        'Workspace updated',
+        `Workspace "${updatedWorkspace.name}" was updated`,
+      );
+
+      return updatedWorkspace;
     });
   }
 
@@ -178,6 +191,13 @@ export class WorkspaceService {
     const workspace = await this.prismaService.workspace.findUnique({
       where: {
         id,
+      },
+      include: {
+        members: {
+          select: {
+            userId: true,
+          },
+        },
       },
     });
 
@@ -190,10 +210,24 @@ export class WorkspaceService {
       workspace
     );
 
-    await this.prismaService.workspace.delete({
-      where: {
-        id: workspace.id,
-      },
+    return this.prismaService.$transaction(async (tx) => {
+      const memberIds = workspace.members
+        .map((member) => member.userId)
+        .filter((userId) => userId !== currentUser.id);
+
+      await tx.workspace.delete({
+        where: {
+          id: workspace.id,
+        },
+      });
+
+      await this.notificationService.notifyUsersTx(
+        tx,
+        memberIds,
+        NotificationType.WORKSPACE_DELETED,
+        'Workspace deleted',
+        `Workspace "${workspace.name}" was deleted`,
+      );
     });
   }
 }

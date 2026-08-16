@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { WorkspaceMemberService } from './workspace-member.service';
-import { WorkspaceMemberController } from './workspace-member.controller';
 import { AuthorizationService } from 'src/common/services';
+import { NotificationService } from '../notification/services/notification.service';
+import { WorkspaceMemberController } from './workspace-member.controller';
+import { WorkspaceMemberService } from './workspace-member.service';
 
 @Module({
   controllers: [
@@ -10,6 +11,7 @@ import { AuthorizationService } from 'src/common/services';
   providers: [
     WorkspaceMemberService,
     AuthorizationService,
+    NotificationService,
   ],
 })
 export class WorkspaceMemberModule {}

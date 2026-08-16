@@ -15,6 +15,7 @@ import {
   ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -107,8 +108,7 @@ export class WorkspaceController {
     description: 'Workspace not found',
   })
   @ApiConflictResponse({
-    description:
-      'Workspace with this slug already exists in the organization',
+    description: 'Workspace with this slug already exists in the organization',
   })
   @Patch(':id')
   async update(
@@ -122,6 +122,9 @@ export class WorkspaceController {
   @ApiOperation({
     summary: 'Delete workspace',
     description: 'Deletes a workspace and its related data',
+  })
+  @ApiNoContentResponse({
+    description: 'Workspace successfully deleted',
   })
   @ApiNotFoundResponse({
     description: 'Workspace not found',

@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { Authorization, CurrentUser, Roles } from 'src/common/decorators';
 import { JwtGuard, RolesGuard } from 'src/common/guards';
@@ -71,6 +71,9 @@ export class UserController {
   @ApiOperation({
     summary: 'Delete user',
     description: 'Deletes a user account',
+  })
+  @ApiNoContentResponse({
+    description: 'User successfully deleted',
   })
   @ApiNotFoundResponse({
     description: 'User not found',

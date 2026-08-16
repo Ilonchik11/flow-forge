@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateCommentDto, UpdateCommentDto } from './dto';
-import { PrismaService } from 'src/infra/prisma/prisma.service';
-import { AuthorizationService } from 'src/common/services';
+import { NotificationType } from '@prisma/client';
 import { AuthenticatedUser } from 'src/common/interfaces';
+import { AuthorizationService } from 'src/common/services';
+import { PrismaService } from 'src/infra/prisma/prisma.service';
+import { NotificationService } from '../notification/services/notification.service';
+import { CreateCommentDto, UpdateCommentDto } from './dto';
 
 @Injectable()
 export class CommentService {
@@ -38,6 +40,7 @@ export class CommentService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly authorizationService: AuthorizationService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async create(
@@ -51,13 +54,38 @@ export class CommentService {
       issue.project,
     );
 
-    return this.prismaService.comment.create({
-      data: {
-        issueId: issue.id,
-        authorId: currentUser.id,
-        content: dto.content,
-      },
-      select: this.commentSelect,
+    const notificationUserIds = [
+      issue.reporterId,
+      issue.assigneeId,
+    ]
+      .filter(
+        (userId): userId is string => 
+          !!userId && userId !== currentUser.id,
+      );
+
+    const uniqueNotificationUserIds = [
+      ...new Set(notificationUserIds),
+    ];
+
+    return this.prismaService.$transaction(async (tx) => {
+      const comment = await tx.comment.create({
+        data: {
+          issueId: issue.id,
+          authorId: currentUser.id,
+          content: dto.content,
+        },
+        select: this.commentSelect,
+      });
+
+      await this.notificationService.notifyUsersTx(
+        tx,
+        uniqueNotificationUserIds,
+        NotificationType.COMMENT_ADDED,
+        'New comment',
+        `${currentUser.email} commented on issue #${issue.key}: "${issue.title}"`,
+      );
+
+      return comment;
     });
   }
 
@@ -149,7 +177,13 @@ export class CommentService {
       where: {
         id: issueId,
       },
-      include: {
+      select: {
+        id: true,
+        key: true,
+        title: true,
+        reporterId: true,
+        assigneeId: true,
+
         project: {
           select: {
             id: true,

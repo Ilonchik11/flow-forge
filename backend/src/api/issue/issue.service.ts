@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { IssueStatus } from '@prisma/client';
+import { IssueStatus, NotificationType } from '@prisma/client';
 
 import { AuthenticatedUser } from 'src/common/interfaces';
 import { AuthorizationService } from 'src/common/services';
@@ -13,6 +13,7 @@ import {
   CreateIssueDto,
   UpdateIssueDto,
 } from './dto';
+import { NotificationService } from '../notification/services/notification.service';
 
 @Injectable()
 export class IssueService {
@@ -63,6 +64,7 @@ export class IssueService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly authorizationService: AuthorizationService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async create(
@@ -83,33 +85,49 @@ export class IssueService {
       );
     }
 
-    const lastIssue = await this.prismaService.issue.findFirst({
-    where: {
-      projectId: project.id,
-    },
-    orderBy: {
-      key: 'desc',
-    },
-    select: {
-      key: true,
-    },
-  });
+    return this.prismaService.$transaction(async (tx) => {
+      const lastIssue = await this.prismaService.issue.findFirst({
+        where: {
+          projectId: project.id,
+        },
+        orderBy: {
+          key: 'desc',
+        },
+        select: {
+          key: true,
+        },
+      });
 
-  const nextKey = (lastIssue?.key ?? 0) + 1;
+      const nextKey = (lastIssue?.key ?? 0) + 1;
 
-    return this.prismaService.issue.create({
-      data: {
-        projectId: project.id,
-        key: nextKey, 
-        title: dto.title,
-        description: dto.description,
-        type: dto.type,
-        status: IssueStatus.TODO,
-        priority: dto.priority,
-        reporterId: currentUser.id,
-        assigneeId: dto.assigneeId,
-      },
-      select: this.issueSelect,
+      const issue = await tx.issue.create({
+        data: {
+          projectId: project.id,
+          key: nextKey, 
+          title: dto.title,
+          description: dto.description,
+          type: dto.type,
+          status: IssueStatus.TODO,
+          priority: dto.priority,
+          reporterId: currentUser.id,
+          assigneeId: dto.assigneeId,
+        },
+        select: this.issueSelect,
+      });
+
+      if(dto.assigneeId && dto.assigneeId !== currentUser.id) {
+        await this.notificationService.createTx(
+          tx,
+          {
+            userId: dto.assigneeId,
+            type: NotificationType.ISSUE_ASSIGNED,
+            title: 'New issue assigned',
+            message: `You were assigned issue #${issue.key}: "${issue.title}" in project "${project.name}"`,
+          }
+        );
+      }
+
+      return issue;
     });
   }
 
@@ -169,31 +187,79 @@ export class IssueService {
       );
     }
 
-    return this.prismaService.issue.update({
-      where: {
-        id: issue.id,
-      },
-      data: {
-        ...(dto.title !== undefined && {
-          title: dto.title,
-        }),
-        ...(dto.description !== undefined && {
-          description: dto.description,
-        }),
-        ...(dto.type !== undefined && {
-          type: dto.type,
-        }),
-        ...(dto.status !== undefined && {
-          status: dto.status,
-        }),
-        ...(dto.priority !== undefined && {
-          priority: dto.priority,
-        }),
-        ...(dto.assigneeId !== undefined && {
-          assigneeId: dto.assigneeId,
-        }),
-      },
-      select: this.issueSelect,
+    return this.prismaService.$transaction(async (tx) => {
+      const previousAssigneeId = issue.assigneeId;
+      const previousStatus = issue.status;
+
+      const updatedIssue = await tx.issue.update({
+        where: {
+          id: issue.id,
+        },
+        data: {
+          ...(dto.title !== undefined && {
+            title: dto.title,
+          }),
+          ...(dto.description !== undefined && {
+            description: dto.description,
+          }),
+          ...(dto.type !== undefined && {
+            type: dto.type,
+          }),
+          ...(dto.status !== undefined && {
+            status: dto.status,
+          }),
+          ...(dto.priority !== undefined && {
+            priority: dto.priority,
+          }),
+          ...(dto.assigneeId !== undefined && {
+            assigneeId: dto.assigneeId,
+          }),
+        },
+        select: this.issueSelect,
+      });
+
+      if(
+        dto.assigneeId !== undefined &&
+        dto.assigneeId !== previousAssigneeId &&
+        dto.assigneeId !== null &&
+        dto.assigneeId !== currentUser.id
+      ) {
+        await this.notificationService.createTx(
+          tx,
+          {
+            userId: dto.assigneeId,
+            type: NotificationType.ISSUE_ASSIGNED,
+            title: 'Issue assigned to you',
+            message: `You were assigned issue #${updatedIssue.key}: "${updatedIssue.title}"`,
+          }
+        );
+      }
+
+      if(
+        dto.status !== undefined &&
+        dto.status !== previousStatus
+      ) {
+        const notificationUserIds = [
+          issue.reporterId,
+          updatedIssue.assigneeId,
+        ]
+          .filter(
+            (userId): userId is string => 
+              !!userId && userId !== currentUser.id,
+          );
+        
+        const uniqueUserIds = [...new Set(notificationUserIds)];
+
+        await this.notificationService.notifyUsersTx(
+          tx,
+          uniqueUserIds,
+          NotificationType.ISSUE_STATUS_CHANGED,
+          'Issue status changed',
+          `Issue #${updatedIssue.key}: "${updatedIssue.title}" is now ${updatedIssue.status}`,
+        );
+      }
+
+      return updatedIssue;
     });
   }
 
@@ -209,10 +275,30 @@ export class IssueService {
       issue,
     );
 
-    await this.prismaService.issue.delete({
-      where: {
-        id: issue.id,
-      },
+    const notificationUserIds = [
+      issue.reporterId,
+      issue.assigneeId,
+    ]
+      .filter(
+        (userId): userId is string => 
+          !!userId && userId !== currentUser.id,
+      );
+
+    
+    return this.prismaService.$transaction(async (tx) => {
+      await tx.issue.delete({
+        where: {
+          id: issue.id,
+        },
+      });
+
+      await this.notificationService.notifyUsersTx(
+        tx,
+        [...new Set(notificationUserIds)],
+        NotificationType.ISSUE_DELETED,
+        'Issue deleted',
+        `Issue #${issue.key}: "${issue.title}" was deleted`,
+      );
     });
   }
 
@@ -226,6 +312,7 @@ export class IssueService {
       select: {
         id: true,
         ownerId: true,
+        name: true,
 
         members: {
           select: {

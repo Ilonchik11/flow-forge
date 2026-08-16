@@ -14,6 +14,7 @@ import {
   ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -121,6 +122,9 @@ export class OrganizationController {
     summary: 'Delete organization',
     description:
       'Deletes an organization owned by the authenticated user',
+  })
+  @ApiNoContentResponse({
+    description: 'Organization successfully deleted',
   })
   @ApiNotFoundResponse({
     description: 'Organization not found',

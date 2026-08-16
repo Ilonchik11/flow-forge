@@ -1,8 +1,9 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { ProjectRole, UserRole } from '@prisma/client';
+import { NotificationType, ProjectRole, UserRole } from '@prisma/client';
 import { AuthenticatedUser } from 'src/common/interfaces';
 import { AuthorizationService } from 'src/common/services';
 import { PrismaService } from 'src/infra/prisma/prisma.service';
+import { NotificationService } from '../notification/services/notification.service';
 import { CreateProjectDto, UpdateProjectDto } from './dto';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class ProjectService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly authorizationService: AuthorizationService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async create(
@@ -134,6 +136,13 @@ export class ProjectService {
       where: {
         id,
       },
+      include: {
+        members: {
+          select: {
+            userId: true,
+          },
+        },
+      },
     });
 
     if(!project) {
@@ -169,27 +178,43 @@ export class ProjectService {
       }
     }
 
-    return this.prismaService.project.update({
-      where: {
-        id,
-      },
-      data: {
-        ...(dto.name !== undefined && {
-          name: dto.name,
-        }),
+    return this.prismaService.$transaction(async (tx) => {
+      const updatedProject = await tx.project.update({
+        where: {
+          id,
+        },
+        data: {
+          ...(dto.name !== undefined && {
+            name: dto.name,
+          }),
 
-        ...(dto.key !== undefined && {
-          key: dto.key,
-        }),
+          ...(dto.key !== undefined && {
+            key: dto.key,
+          }),
 
-        ...(dto.description !== undefined && {
-          description: dto.description,
-        }),
+          ...(dto.description !== undefined && {
+            description: dto.description,
+          }),
 
-        ...(dto.avatarUrl !== undefined && {
-          avatarUrl: dto.avatarUrl,
-        }),
-      },
+          ...(dto.avatarUrl !== undefined && {
+            avatarUrl: dto.avatarUrl,
+          }),
+        },
+      });
+
+      const memberIds = project.members
+        .map((member) => member.userId)
+        .filter((userId) => userId !== currentUser.id);
+
+      await this.notificationService.notifyUsersTx(
+        tx,
+        memberIds,
+        NotificationType.PROJECT_UPDATED,
+        'Project updated',
+        `Project "${updatedProject.name}" was updated`,
+      );
+
+      return updatedProject;
     });
   }
 
@@ -200,6 +225,13 @@ export class ProjectService {
     const project = await this.prismaService.project.findUnique({
       where: {
         id,
+      },
+      include: {
+        members: {
+          select: {
+            userId: true,
+          },
+        },
       },
     });
 
@@ -218,10 +250,24 @@ export class ProjectService {
       membership,
     );
 
-    await this.prismaService.project.delete({
-      where: {
-        id: project.id,
-      },
+    return this.prismaService.$transaction(async (tx) => {
+      const memberIds = project.members
+        .map((member) => member.userId)
+        .filter((userId) => userId !== currentUser.id);
+
+      await tx.project.delete({
+        where: {
+          id: project.id,
+        },
+      });
+
+      await this.notificationService.notifyUsersTx(
+        tx,
+        memberIds,
+        NotificationType.PROJECT_DELETED,
+        'Project deleted',
+        `Project "${project.name}" was deleted`,
+      );
     });
   }
 

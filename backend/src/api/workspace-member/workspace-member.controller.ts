@@ -16,6 +16,7 @@ import {
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -130,9 +131,11 @@ export class WorkspaceMemberController {
       summary: 'Leave workspace',
       description: 'Removes the current user from the workspace',
     })
+    @ApiNoContentResponse({
+      description: 'User successfully left the workspace',
+    })
     @ApiForbiddenResponse({
-      description:
-        'Workspace owner cannot leave the workspace',
+      description: 'Workspace owner cannot leave the workspace',
     })
     @Post('leave')
     @HttpCode(HttpStatus.NO_CONTENT)
@@ -179,6 +182,9 @@ export class WorkspaceMemberController {
   @ApiOperation({
     summary: 'Remove workspace member',
     description: 'Removes a member from the workspace',
+  })
+  @ApiNoContentResponse({
+    description: 'Workspace member successfully deleted',
   })
   @ApiForbiddenResponse({
     description: 'Only workspace owners and administrators can remove members',

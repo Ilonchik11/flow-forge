@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { CommentService } from './comment.service';
-import { CommentController } from './comment.controller';
 import { AuthorizationService } from 'src/common/services';
+import { NotificationService } from '../notification/services/notification.service';
+import { CommentController } from './comment.controller';
+import { CommentService } from './comment.service';
 
 @Module({
   controllers: [
@@ -10,6 +11,7 @@ import { AuthorizationService } from 'src/common/services';
   providers: [
     CommentService,
     AuthorizationService,
+    NotificationService,
   ],
 })
 export class CommentModule {}

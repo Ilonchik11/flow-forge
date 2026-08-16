@@ -17,6 +17,7 @@ import {
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -71,6 +72,9 @@ export class ProjectMemberController {
   @ApiOperation({
     summary: 'Leave project',
     description: 'Removes the current user from the project',
+  })
+  @ApiNoContentResponse({
+    description: 'Project member successfully left the project',
   })
   @ApiForbiddenResponse({
     description: 'Project owner cannot leave the project',
@@ -181,6 +185,9 @@ export class ProjectMemberController {
   @ApiOperation({
     summary: 'Remove project member',
     description: 'Removes a member from the project',
+  })
+  @ApiNoContentResponse({
+    description: 'Project member successfully deleted',
   })
   @ApiNotFoundResponse({
     description: 'Project member not found',

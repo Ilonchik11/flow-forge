@@ -1,7 +1,9 @@
 import { INestApplication } from "@nestjs/common";
 import { SwaggerModule } from "@nestjs/swagger";
 import { AuthModule } from "src/api/auth/auth.module";
+import { CommentModule } from "src/api/comment/comment.module";
 import { IssueModule } from "src/api/issue/issue.module";
+import { NotificationModule } from "src/api/notification/notification.module";
 import { OrganizationModule } from "src/api/organization/organization.module";
 import { ProjectMemberModule } from "src/api/project-member/project-member.module";
 import { ProjectModule } from "src/api/project/project.module";
@@ -23,6 +25,8 @@ export function setUpSwagger(app: INestApplication) {
             ProjectModule,
             ProjectMemberModule,
             IssueModule,
+            CommentModule,
+            NotificationModule,
         ],
         operationIdFactory: (controllerKey, methodKey) => `${controllerKey}-${methodKey}`
     });

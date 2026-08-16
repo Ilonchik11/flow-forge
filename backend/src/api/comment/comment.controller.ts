@@ -16,6 +16,7 @@ import {
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -160,6 +161,9 @@ export class CommentController {
   @ApiOperation({
     summary: 'Delete comment',
     description: 'Deletes an existing comment',
+  })
+  @ApiNoContentResponse({
+    description: 'Comment successfully deleted',
   })
   @ApiNotFoundResponse({
     description: 'Comment not found',

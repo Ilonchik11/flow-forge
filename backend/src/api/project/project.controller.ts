@@ -16,6 +16,7 @@ import {
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -141,6 +142,9 @@ export class ProjectController {
   @ApiOperation({
     summary: 'Delete project',
     description: 'Deletes a project and its related data',
+  })
+  @ApiNoContentResponse({
+    description: 'Project successfully deleted',
   })
   @ApiNotFoundResponse({
     description: 'Project not found',

@@ -17,6 +17,7 @@ import {
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -153,6 +154,9 @@ export class IssueController {
   @ApiOperation({
     summary: 'Delete issue',
     description: 'Deletes an issue',
+  })
+  @ApiNoContentResponse({
+    description: 'Issue successfully deleted',
   })
   @ApiNotFoundResponse({
     description: 'Issue not found',

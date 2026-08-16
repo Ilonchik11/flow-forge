@@ -7,7 +7,7 @@ import type { StringValue } from 'ms';
 import { JwtPayload } from 'src/common/interfaces';
 import { cookieExpires, isDev } from 'src/common/utils';
 import { PrismaService } from 'src/infra/prisma/prisma.service';
-import { LoginRequest, RegisterRequest } from './dto';
+import { LoginRequest, RegisterRequest } from '../dto';
 import { User, UserStatus } from '@prisma/client';
 
 @Injectable()

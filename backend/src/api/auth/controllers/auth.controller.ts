@@ -4,8 +4,8 @@ import type {
   Request,
   Response
 } from 'express';
-import { AuthService } from './auth.service';
-import { AuthResponse, LoginRequest, RegisterRequest } from './dto';
+import { AuthService } from '../services/auth.service';
+import { AuthResponse, LoginRequest, RegisterRequest } from '../dto';
 
 @Controller('auth')
 export class AuthController {

@@ -32,9 +32,9 @@ import {
   CreateProjectMemberDto,
   ProjectMemberResponseDto,
   UpdateProjectMemberDto,
-} from './dto';
+} from '../dto';
+import { ProjectMemberService } from '../services/project-member.service';
 
-import { ProjectMemberService } from './project-member.service';
 
 @ApiTags('Project Members')
 @ApiBearerAuth()

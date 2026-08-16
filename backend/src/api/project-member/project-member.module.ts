@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ProjectMemberService } from './project-member.service';
-import { ProjectMemberController } from './project-member.controller';
 import { AuthorizationService } from 'src/common/services';
 import { NotificationService } from '../notification/services/notification.service';
+import { ProjectMemberController } from './controllers/project-member.controller';
+import { ProjectMemberService } from './services/project-member.service';
 
 @Module({
   controllers: [

@@ -31,9 +31,9 @@ import {
   CreateWorkspaceMemberDto,
   UpdateWorkspaceMemberDto,
   WorkspaceMemberResponseDto,
-} from './dto';
+} from '../dto';
 
-import { WorkspaceMemberService } from './workspace-member.service';
+import { WorkspaceMemberService } from '../services/workspace-member.service';
 
 @ApiTags('Workspace Members')
 @ApiBearerAuth()

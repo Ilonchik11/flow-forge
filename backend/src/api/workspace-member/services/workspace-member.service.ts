@@ -3,8 +3,8 @@ import { NotificationType, WorkspaceRole } from '@prisma/client';
 import { AuthenticatedUser } from 'src/common/interfaces';
 import { AuthorizationService } from 'src/common/services';
 import { PrismaService } from 'src/infra/prisma/prisma.service';
-import { NotificationService } from '../notification/services/notification.service';
-import { CreateWorkspaceMemberDto, UpdateWorkspaceMemberDto } from './dto';
+import { NotificationService } from '../../notification/services/notification.service';
+import { CreateWorkspaceMemberDto, UpdateWorkspaceMemberDto } from '../dto';
 
 @Injectable()
 export class WorkspaceMemberService {
